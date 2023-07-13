@@ -2,9 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import {
   ApolloClient,
-  InMemoryCache,
   ApolloProvider,
-  createHttpLink,
 } from '@apollo/client';
 // import ApolloClient from 'apollo-boost';
 import SearchBooks from './pages/SearchBooks';
@@ -13,7 +11,7 @@ import Navbar from './components/Navbar';
 
 // Create the Apollo Client instance
 const client = new ApolloClient({
-  uri: 'http://localhost:3000', // Replace with your GraphQL server endpoint
+  uri: 'http://localhost:3000/graphql', // Replace with your GraphQL server endpoint
 });
 
 function App() {

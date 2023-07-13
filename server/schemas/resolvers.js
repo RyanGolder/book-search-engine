@@ -3,9 +3,7 @@ const { signToken } = require('../utils/auth');
 
 const resolvers = {
   Query: {
-    // Define the resolver for the "user" query
     user: async (parent, { id, username }) => {
-      // Get a single user by either their id or username
       const foundUser = await User.findOne({
         $or: [{ _id: id }, { username: username }],
       });
@@ -18,45 +16,37 @@ const resolvers = {
     },
   },
   Mutation: {
-    // Define the resolver for the "createUser" mutation
-    createUser: async (parent, { input }) => {
-      // Create a user
-      const user = await User.create(input);
+    addUser: async (parent, { username, email, password }) => {
+      const user = await User.create({ username, email, password });
 
       if (!user) {
         throw new Error('Something went wrong. User creation failed');
       }
 
-      // Sign a token
       const token = signToken(user);
 
       return { token, user };
     },
-    // Define the resolver for the "login" mutation
-    login: async (parent, { input }) => {
-      // Find a user by their username or email
+    login: async (parent, { email, password }) => {
       const user = await User.findOne({
-        $or: [{ username: input.username }, { email: input.email }],
+        $or: [{ username: email }, { email: email }],
       });
 
       if (!user) {
         throw new Error("Can't find this user");
       }
 
-      // Check password validity
-      const correctPw = await user.isCorrectPassword(input.password);
+      const correctPw = await user.isCorrectPassword(password);
 
       if (!correctPw) {
         throw new Error('Wrong password!');
       }
 
-      // Sign a token
       const token = signToken(user);
 
       return { token, user };
     },
-    // Define the resolver for the "saveBook" mutation
-    saveBook: async (parent, { input }, { user }) => {
+    saveBook: async (parent, { authors, description, title, bookId, image, link }, { user }) => {
       if (!user) {
         throw new Error('Authentication failed. Please login');
       }
@@ -64,7 +54,7 @@ const resolvers = {
       try {
         const updatedUser = await User.findOneAndUpdate(
           { _id: user._id },
-          { $addToSet: { savedBooks: input } },
+          { $addToSet: { savedBooks: { authors, description, title, bookId, image, link } } },
           { new: true, runValidators: true }
         );
 
@@ -73,15 +63,14 @@ const resolvers = {
         throw new Error('Book saving failed');
       }
     },
-    // Define the resolver for the "deleteBook" mutation
-    deleteBook: async (parent, { bookId }, { user }) => {
+    removeBook: async (parent, { bookId }, { user }) => {
       if (!user) {
         throw new Error('Authentication failed. Please login');
       }
 
       const updatedUser = await User.findOneAndUpdate(
         { _id: user._id },
-        { $pull: { savedBooks: { bookId: bookId } } },
+        { $pull: { savedBooks: { bookId } } },
         { new: true }
       );
 

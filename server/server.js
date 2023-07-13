@@ -4,12 +4,13 @@ const path = require('path');
 const db = require('./config/connection');
 const { typeDefs, resolvers } = require('./schemas');
 const { authMiddleware } = require('./utils/auth');
-// const routes = require('./routes');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
 async function startApolloServer() {
+  await db.connect(); // Connect to MongoDB
+
   const server = new ApolloServer({
     typeDefs,
     resolvers,
@@ -20,16 +21,15 @@ async function startApolloServer() {
 
   server.applyMiddleware({ app });
 
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../client/build')));
+  if (process.env.NODE_ENV === 'production') {
+    app.use(express.static(path.join(__dirname, '../client/build')));
+    app.get('*', (req, res) => {
+      res.sendFile(path.join(__dirname, '../client/build/index.html'));
+    });
   }
 
   app.use(express.urlencoded({ extended: true }));
   app.use(express.json());
-
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../client/build/index.html'));
-  });
 
   await new Promise(resolve => app.listen({ port: PORT }, resolve));
   console.log(`🚀 Server ready at http://localhost:${PORT}${server.graphqlPath}`);
